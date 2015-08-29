@@ -8,9 +8,25 @@
                 android:paddingBottom="@dimen/activity_vertical_margin"
                 tools:context=".FBChatHeadActivityFragment">
 
-    <TextView
-        android:text="@string/hello_world"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_centerInParent="true">
+        <Button
+            android:id="@+id/start_floating"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/display"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/stop_floating"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/remove"
+            android:layout_weight="1"/>
+    </LinearLayout>
 
 </RelativeLayout>

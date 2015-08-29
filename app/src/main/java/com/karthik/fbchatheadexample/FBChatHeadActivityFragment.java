@@ -3,6 +3,7 @@ package com.karthik.fbchatheadexample;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -17,6 +18,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -32,6 +34,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
 
 
     public FBChatHeadActivityFragment() {
+
     }
 
     @Override
@@ -60,6 +63,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 displayButton();
                 break;
             case R.id.stop_floating:
+                //remove the chat head
                 if(chatheadView!=null){
                     windowManager.removeView(chatheadView);
                 }
@@ -70,8 +74,8 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
 
     private void displayButton(){
 
-         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(mContext.LAYOUT_INFLATER_SERVICE);
-         removeView = (RelativeLayout)inflater.inflate(R.layout.remove, null);
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(mContext.LAYOUT_INFLATER_SERVICE);
+        removeView = (RelativeLayout)inflater.inflate(R.layout.remove, null);
 
         WindowManager.LayoutParams paramRemove = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -80,7 +84,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
-        paramRemove.gravity = Gravity.TOP | Gravity.LEFT;
+        paramRemove.gravity = Gravity.BOTTOM | Gravity.CENTER;
 
         removeView.setVisibility(View.GONE);
         removeImg = (ImageView)removeView.findViewById(R.id.remove_img);
@@ -109,7 +113,6 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
         params.x = 0;
         params.y = 100;
         windowManager.addView(chatheadView, params);
-
         chatheadView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -120,9 +123,10 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 int x_cord_Destination, y_cord_Destination;
                 switch (event.getAction()) {
 
+
                     case MotionEvent.ACTION_DOWN:
-                        time_start = System.currentTimeMillis();
-                        handler_longClick.postDelayed(runnable_longClick, 600);
+
+                        handler_longClick.post(runnable_longClick);
 
                         remove_img_width = removeImg.getLayoutParams().width;
                         remove_img_height = removeImg.getLayoutParams().height;
@@ -134,65 +138,26 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                         y_init_margin = layoutParams.y;
                         break;
 
+                    //when the user is dragging the bubble calculate the offset
                     case MotionEvent.ACTION_MOVE:
+
                         int x_diff_move = x_cord - x_init_cord;
                         int y_diff_move = y_cord - y_init_cord;
 
                         x_cord_Destination = x_init_margin + x_diff_move;
                         y_cord_Destination = y_init_margin + y_diff_move;
 
-                        if(isLongclick){
-                            int x_bound_left = (szWindow.x - removeView.getWidth()) / 2 - 250;
-                            int x_bound_right = (szWindow.x + removeView.getWidth()) / 2 + 100;
-
-                            int y_bound_top = szWindow.y - (removeView.getHeight() + getStatusBarHeight()) - 200;
-
-                            if((x_cord_Destination >= x_bound_left && x_cord_Destination <= x_bound_right) && y_cord_Destination >= y_bound_top){
-                                inBounded = true;
-
-                                layoutParams.x = (szWindow.x - chatheadView.getWidth()) / 2;
-                                layoutParams.y = szWindow.y - (removeView.getHeight() + getStatusBarHeight()) + 70;
-
-                                if(removeImg.getLayoutParams().height == remove_img_height){
-                                    removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
-                                    removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
-
-                                    WindowManager.LayoutParams param_remove = (WindowManager.LayoutParams) removeView.getLayoutParams();
-                                    int x_cord_remove = (int) ((szWindow.x - (remove_img_height * 1.5)) / 2);
-                                    int y_cord_remove = (int) (szWindow.y - ((remove_img_width * 1.5) + getStatusBarHeight() ));
-                                    param_remove.x = x_cord_remove;
-                                    param_remove.y = y_cord_remove;
-
-                                    windowManager.updateViewLayout(removeView, param_remove);
-                                }
-
-
-                                windowManager.updateViewLayout(chatheadView, layoutParams);
-                                break;
-                            }else{
-                                inBounded = false;
-                                removeImg.getLayoutParams().height = remove_img_height;
-                                removeImg.getLayoutParams().width = remove_img_width;
-
-                                WindowManager.LayoutParams param_remove = (WindowManager.LayoutParams) removeView.getLayoutParams();
-                                int x_cord_remove = (szWindow.x - removeView.getWidth()) / 2;
-                                int y_cord_remove = szWindow.y - (removeView.getHeight() + getStatusBarHeight() );
-
-                                param_remove.x = x_cord_remove;
-                                param_remove.y = y_cord_remove;
-
-                                windowManager.updateViewLayout(removeView, param_remove);
-                            }
-
-                        }
-
+                        Log.e("TAG",String.format("X DEST: %d",x_cord_Destination));
+                        Log.e("TAG",String.format("Y DEST: %d",y_cord_Destination));
 
                         layoutParams.x = x_cord_Destination;
                         layoutParams.y = y_cord_Destination;
 
+
                         windowManager.updateViewLayout(chatheadView, layoutParams);
                         break;
 
+                    //when user lifts his hand update the current position
                     case MotionEvent.ACTION_UP:
                         isLongclick = false;
                         removeView.setVisibility(View.GONE);
@@ -200,7 +165,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                         removeImg.getLayoutParams().width = remove_img_width;
                         handler_longClick.removeCallbacks(runnable_longClick);
 
-                        if(inBounded){
+                        if (inBounded) {
                             inBounded = false;
                             break;
                         }
@@ -209,26 +174,15 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                         int x_diff = x_cord - x_init_cord;
                         int y_diff = y_cord - y_init_cord;
 
-                        if(x_diff < 5 && y_diff < 5){
-                            time_end = System.currentTimeMillis();
-                            if((time_end - time_start) < 300){
-                                //here should be chat head click
-                            }
-                        }
-
-
                         x_cord_Destination = x_init_margin + x_diff;
                         y_cord_Destination = y_init_margin + y_diff;
 
-                        int x_start;
-                        x_start = x_cord_Destination;
 
-
-                        int BarHeight =  getStatusBarHeight();
+                        int BarHeight = getStatusBarHeight();
                         if (y_cord_Destination < 0) {
                             y_cord_Destination = 0;
                         } else if (y_cord_Destination + (chatheadView.getHeight() + BarHeight) > szWindow.y) {
-                            y_cord_Destination = szWindow.y - (chatheadView.getHeight() + BarHeight );
+                            y_cord_Destination = szWindow.y - (chatheadView.getHeight() + BarHeight);
                         }
                         layoutParams.y = y_cord_Destination;
                         inBounded = false;
@@ -239,7 +193,6 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
 
             }
 
-            long time_start = 0, time_end = 0;
             boolean isLongclick = false, inBounded = false;
             int remove_img_width = 0, remove_img_height = 0;
 
@@ -248,43 +201,23 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
 
                 @Override
                 public void run() {
-
-                    Log.d("TAG", "Into runnable_longClick");
-
                     isLongclick = true;
                     removeView.setVisibility(View.VISIBLE);
-                    chathead_longclick(windowManager);
+                    final Rect rect = new Rect();
+                    removeView.getLocalVisibleRect(rect);
+                    Log.e("TAG", "X:" + String.valueOf(rect.left));
+                    Log.e("TAG", "Y:" + String.valueOf(rect.right));
+                    Log.e("TAG", "X:" + String.valueOf(removeView.getX()));
+                    Log.e("TAG", "Y:" + String.valueOf(removeView.getY()));
                 }
             };
 
         });
     }
 
-    private void chathead_longclick( WindowManager windowManager){
-        Log.d("TAG", "Into ChatHeadService.chathead_longclick() ");
-
-        WindowManager.LayoutParams param_remove = (WindowManager.LayoutParams) removeView.getLayoutParams();
-        int x_cord_remove = (szWindow.x - removeView.getWidth()) / 2;
-        int y_cord_remove = szWindow.y - (removeView.getHeight() + getStatusBarHeight() );
-
-        param_remove.x = x_cord_remove;
-        param_remove.y = y_cord_remove;
-
-        windowManager.updateViewLayout(removeView, param_remove);
-    }
-
-
     private int getStatusBarHeight() {
         int statusBarHeight = (int) Math.ceil(25 * getResources().getDisplayMetrics().density);
         return statusBarHeight;
-    }
-
-    @Override
-    public void onPause(){
-        super.onPause();
-        if(chatheadView!=null){
-            windowManager.removeView(chatheadView);
-        }
     }
 
 }

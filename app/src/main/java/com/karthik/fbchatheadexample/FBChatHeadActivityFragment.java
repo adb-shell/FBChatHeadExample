@@ -29,7 +29,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
     private RelativeLayout chatheadView, removeView;
     private ImageView chatheadImg, removeImg;
     private Point szWindow = new Point();
-    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin;
+    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin,x_remove,y_remove;
     private WindowManager windowManager;
 
 
@@ -147,12 +147,9 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                         x_cord_Destination = x_init_margin + x_diff_move;
                         y_cord_Destination = y_init_margin + y_diff_move;
 
-                        Log.e("TAG",String.format("X DEST: %d",x_cord_Destination));
-                        Log.e("TAG",String.format("Y DEST: %d",y_cord_Destination));
 
                         layoutParams.x = x_cord_Destination;
                         layoutParams.y = y_cord_Destination;
-
 
                         windowManager.updateViewLayout(chatheadView, layoutParams);
                         break;
@@ -169,7 +166,9 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                             inBounded = false;
                             break;
                         }
-
+                        if(isViewContains(layoutParams.x,layoutParams.y)){
+                            Toast.makeText(mContext,"BINGO",Toast.LENGTH_SHORT).show();
+                        }
 
                         int x_diff = x_cord - x_init_cord;
                         int y_diff = y_cord - y_init_cord;
@@ -203,12 +202,12 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 public void run() {
                     isLongclick = true;
                     removeView.setVisibility(View.VISIBLE);
-                    final Rect rect = new Rect();
-                    removeView.getLocalVisibleRect(rect);
-                    Log.e("TAG", "X:" + String.valueOf(rect.left));
-                    Log.e("TAG", "Y:" + String.valueOf(rect.right));
-                    Log.e("TAG", "X:" + String.valueOf(removeView.getX()));
-                    Log.e("TAG", "Y:" + String.valueOf(removeView.getY()));
+                    if(x_remove==0 || y_remove==0){
+                        int[] pos = new int[2];
+                        removeView.getLocationOnScreen(pos);
+                        x_remove = pos[0];
+                        y_remove = pos[1];
+                    }
                 }
             };
 
@@ -220,4 +219,9 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
         return statusBarHeight;
     }
 
+    private boolean isViewContains(int x,int y) {
+
+        Rect rect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
+        return rect.contains(x,y);
+    }
 }

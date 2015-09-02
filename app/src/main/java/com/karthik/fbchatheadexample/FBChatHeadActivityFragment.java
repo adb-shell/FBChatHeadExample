@@ -220,8 +220,8 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
     }
 
     private boolean isViewContains(int x,int y) {
-
         Rect rect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
-        return rect.contains(x,y);
+        Rect rect1 = new Rect(x,y, x+removeView.getWidth(),y+removeView.getHeight());
+        return rect.intersect(rect1);
     }
 }

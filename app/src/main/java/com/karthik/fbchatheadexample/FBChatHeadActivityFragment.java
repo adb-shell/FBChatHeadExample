@@ -8,7 +8,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -18,7 +17,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -85,8 +83,8 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
+        //in order to add the remove exactly at the bottom of the screen
         paramRemove.gravity = Gravity.BOTTOM | Gravity.CENTER;
-
         removeView.setVisibility(View.GONE);
         removeImg = (ImageView)removeView.findViewById(R.id.remove_img);
         windowManager.addView(removeView, paramRemove);
@@ -110,10 +108,13 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
+        //Please feel free to animate the incoming of the bubble and adjust its position accordingly
         params.gravity = Gravity.TOP | Gravity.LEFT;
         params.x = 0;
         params.y = 100;
         windowManager.addView(chatheadView, params);
+
+
         chatheadView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -153,7 +154,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                         layoutParams.y = y_cord_Destination;
 
                         //make the remove view bigger
-                        if(isViewContains(layoutParams.x,layoutParams.y)){
+                        if(isViewIntersects(layoutParams.x, layoutParams.y)){
                             removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
                             removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
                             windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
@@ -200,7 +201,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                             windowManager.removeView(chatheadView);
                             chatheadView = null;
                         }
-                        
+
                         break;
                 }
                 return true;
@@ -233,10 +234,10 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
         return statusBarHeight;
     }
 
-    private boolean isViewContains(int x,int y) {
-        Rect rect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
-        Rect rect1 = new Rect(x,y, x+removeView.getWidth(),y+removeView.getHeight());
-        return rect.intersect(rect1);
+    private boolean isViewIntersects(int x, int y) {
+        Rect removeRect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
+        Rect ChatHeadRect = new Rect(x,y, x+removeView.getWidth(),y+removeView.getHeight());
+        return removeRect.intersect(ChatHeadRect);
     }
 
     private int getPixels(){

@@ -66,6 +66,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 //remove the chat head
                 if(chatheadView!=null){
                     windowManager.removeView(chatheadView);
+                    chatheadView = null;
                 }
                 break;
         }
@@ -151,24 +152,33 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                         layoutParams.x = x_cord_Destination;
                         layoutParams.y = y_cord_Destination;
 
+                        //make the remove view bigger
+                        if(isViewContains(layoutParams.x,layoutParams.y)){
+                            removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
+                            removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
+                            windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
+                            inBound = true;
+                        }
+
+                        else{
+                            //restore the height to the normal of the remove view
+                            if(inBound){
+                                removeImg.getLayoutParams().height = getPixels();
+                                removeImg.getLayoutParams().width = getPixels();
+                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
+                                inBound = false;
+                            }
+                        }
+
                         windowManager.updateViewLayout(chatheadView, layoutParams);
                         break;
 
                     //when user lifts his hand update the current position
                     case MotionEvent.ACTION_UP:
-                        isLongclick = false;
                         removeView.setVisibility(View.GONE);
                         removeImg.getLayoutParams().height = remove_img_height;
                         removeImg.getLayoutParams().width = remove_img_width;
                         handler_longClick.removeCallbacks(runnable_longClick);
-
-                        if (inBounded) {
-                            inBounded = false;
-                            break;
-                        }
-                        if(isViewContains(layoutParams.x,layoutParams.y)){
-                            Toast.makeText(mContext,"BINGO",Toast.LENGTH_SHORT).show();
-                        }
 
                         int x_diff = x_cord - x_init_cord;
                         int y_diff = y_cord - y_init_cord;
@@ -184,15 +194,20 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                             y_cord_Destination = szWindow.y - (chatheadView.getHeight() + BarHeight);
                         }
                         layoutParams.y = y_cord_Destination;
-                        inBounded = false;
 
+                        if(inBound && chatheadView!=null){
+                            //remove the chathead view here
+                            windowManager.removeView(chatheadView);
+                            chatheadView = null;
+                        }
+                        
                         break;
                 }
                 return true;
 
             }
 
-            boolean isLongclick = false, inBounded = false;
+            boolean inBound = false;
             int remove_img_width = 0, remove_img_height = 0;
 
             Handler handler_longClick = new Handler();
@@ -200,7 +215,6 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
 
                 @Override
                 public void run() {
-                    isLongclick = true;
                     removeView.setVisibility(View.VISIBLE);
                     if(x_remove==0 || y_remove==0){
                         int[] pos = new int[2];
@@ -223,5 +237,10 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
         Rect rect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
         Rect rect1 = new Rect(x,y, x+removeView.getWidth(),y+removeView.getHeight());
         return rect.intersect(rect1);
+    }
+
+    private int getPixels(){
+        final float scale = getResources().getDisplayMetrics().density;
+        return (int) (80 * scale + 0.5f);
     }
 }

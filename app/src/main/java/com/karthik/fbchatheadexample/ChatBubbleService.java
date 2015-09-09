@@ -213,8 +213,8 @@ public class ChatBubbleService extends Service {
 
     private boolean isViewIntersects(int x, int y) {
         Rect removeRect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
-        Rect ChatHeadRect = new Rect(x,y, x+removeView.getWidth(),y+removeView.getHeight());
-        return removeRect.intersect(ChatHeadRect);
+        Rect ChatHeadRect = new Rect(x,y, x+chatheadView.getWidth(),y+chatheadView.getHeight());
+        return ChatHeadRect.intersect(removeRect);
     }
 
     private int getPixels(){

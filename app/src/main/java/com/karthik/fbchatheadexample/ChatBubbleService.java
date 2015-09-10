@@ -1,6 +1,6 @@
 package com.karthik.fbchatheadexample;
 
-import android.app.IntentService;
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -28,14 +29,19 @@ public class ChatBubbleService extends Service {
     private WindowManager windowManager;
     private RelativeLayout chatheadView, removeView;
     private Point szWindow = new Point();
-    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin,x_remove,y_remove;
+    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin,x_remove,y_remove,height,width;
     private Context mContext;
     private ImageView chatheadImg, removeImg;
+    private DisplayMetrics displayMetrics;
 
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e("TAG","CHAT HEAD SERVICE STARTED");
+
+        displayMetrics = getResources().getDisplayMetrics();
+        height = displayMetrics.heightPixels;
+        width = displayMetrics.widthPixels;
         if(startId == Service.START_STICKY) {
             displayChatBubble();
             return super.onStartCommand(intent, flags, startId);
@@ -49,6 +55,7 @@ public class ChatBubbleService extends Service {
         mContext = this;
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(mContext.LAYOUT_INFLATER_SERVICE);
+
 
         //Adding the remove view
         removeView = (RelativeLayout) inflater.inflate(R.layout.remove, null);
@@ -124,16 +131,36 @@ public class ChatBubbleService extends Service {
                         x_cord_Destination = x_init_margin + x_diff_move;
                         y_cord_Destination = y_init_margin + y_diff_move;
 
+                        int statusBarHeight = getStatusBarHeight();
+
+                        //check if
+                        if(x_cord_Destination+chatheadView.getWidth()>width){
+                            x_cord_Destination = width-chatheadView.getWidth();
+                        }
+                        else if (x_cord_Destination<0){
+                            x_cord_Destination = 0;
+                        }
 
                         layoutParams.x = x_cord_Destination;
+
+                        if(y_cord_Destination+(chatheadView.getHeight()+statusBarHeight)>height){
+                            y_cord_Destination = height-statusBarHeight-chatheadView.getHeight();
+                        }
+                        else if(y_cord_Destination<0){
+                            y_cord_Destination = 0;
+                        }
+
                         layoutParams.y = y_cord_Destination;
 
+
                         //make the remove view bigger
-                        if(isViewIntersects(layoutParams.x, layoutParams.y)){
-                            removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
-                            removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
-                            windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
-                            inBound = true;
+                        if(layoutParams.y==height-statusBarHeight-chatheadView.getHeight()){
+                            if(isViewIntersects(layoutParams.x)){
+                                removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
+                                removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
+                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
+                                inBound = true;
+                            }
                         }
 
                         else{
@@ -146,6 +173,8 @@ public class ChatBubbleService extends Service {
                             }
                         }
 
+
+
                         windowManager.updateViewLayout(chatheadView, layoutParams);
                         break;
 
@@ -154,21 +183,6 @@ public class ChatBubbleService extends Service {
                         removeImg.getLayoutParams().height = remove_img_height;
                         removeImg.getLayoutParams().width = remove_img_width;
                         handler_longClick.removeCallbacks(runnable_longClick);
-
-                        int x_diff = x_cord - x_init_cord;
-                        int y_diff = y_cord - y_init_cord;
-
-                        x_cord_Destination = x_init_margin + x_diff;
-                        y_cord_Destination = y_init_margin + y_diff;
-
-
-                        int BarHeight = getStatusBarHeight();
-                        if (y_cord_Destination < 0) {
-                            y_cord_Destination = 0;
-                        } else if (y_cord_Destination + (chatheadView.getHeight() + BarHeight) > szWindow.y) {
-                            y_cord_Destination = szWindow.y - (chatheadView.getHeight() + BarHeight);
-                        }
-                        layoutParams.y = y_cord_Destination;
 
                         if(inBound && chatheadView!=null){
                             //remove the chathead view here
@@ -207,18 +221,25 @@ public class ChatBubbleService extends Service {
     }
 
     private int getStatusBarHeight() {
-        int statusBarHeight = (int) Math.ceil(25 * getResources().getDisplayMetrics().density);
-        return statusBarHeight;
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
-    private boolean isViewIntersects(int x, int y) {
-        Rect removeRect = new Rect(x_remove,y_remove, x_remove+removeView.getWidth(),y_remove+removeView.getHeight());
-        Rect ChatHeadRect = new Rect(x,y, x+chatheadView.getWidth(),y+chatheadView.getHeight());
-        return ChatHeadRect.intersect(removeRect);
+    private boolean isViewIntersects(int x) {
+        if(x>x_remove && x<x_remove+removeView.getWidth()){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
     private int getPixels(){
-        final float scale = getResources().getDisplayMetrics().density;
+        final float scale = displayMetrics.density;
         return (int) (80 * scale + 0.5f);
     }
 

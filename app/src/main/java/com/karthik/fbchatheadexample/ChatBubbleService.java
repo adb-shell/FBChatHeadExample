@@ -154,6 +154,7 @@ public class ChatBubbleService extends Service {
 
 
                         //make the remove view bigger
+                        //TODO refactor this part of code
                         if(layoutParams.y==height-statusBarHeight-chatheadView.getHeight()){
                             if(isViewIntersects(layoutParams.x)){
                                 removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
@@ -161,8 +162,16 @@ public class ChatBubbleService extends Service {
                                 windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
                                 inBound = true;
                             }
+                            //when x co-ordinate is not same
+                            else{
+                                removeImg.getLayoutParams().height = getPixels();
+                                removeImg.getLayoutParams().width = getPixels();
+                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
+                                inBound = false;
+                            }
                         }
 
+                        //general case when x and y is not same
                         else{
                             //restore the height to the normal of the remove view
                             if(inBound){
@@ -230,12 +239,9 @@ public class ChatBubbleService extends Service {
     }
 
     private boolean isViewIntersects(int x) {
-        if(x>x_remove && x<x_remove+removeView.getWidth()){
-            return true;
-        }
-        else{
-            return false;
-        }
+       if(x>x_remove-removeView.getWidth() && x<x_remove)
+           return true;
+        return false;
     }
 
     private int getPixels(){

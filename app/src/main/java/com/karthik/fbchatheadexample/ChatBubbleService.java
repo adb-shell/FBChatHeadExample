@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -29,7 +28,7 @@ public class ChatBubbleService extends Service {
     private WindowManager windowManager;
     private RelativeLayout chatheadView, removeView;
     private Point szWindow = new Point();
-    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin,x_remove,y_remove,height,width;
+    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin,x_remove,y_remove, screenHeight, screenWidth;
     private Context mContext;
     private ImageView chatheadImg, removeImg;
     private DisplayMetrics displayMetrics;
@@ -40,8 +39,8 @@ public class ChatBubbleService extends Service {
         Log.e("TAG","CHAT HEAD SERVICE STARTED");
 
         displayMetrics = getResources().getDisplayMetrics();
-        height = displayMetrics.heightPixels;
-        width = displayMetrics.widthPixels;
+        screenHeight = displayMetrics.heightPixels;
+        screenWidth = displayMetrics.widthPixels;
         if(startId == Service.START_STICKY) {
             displayChatBubble();
             return super.onStartCommand(intent, flags, startId);
@@ -78,13 +77,7 @@ public class ChatBubbleService extends Service {
         chatheadView = (RelativeLayout) inflater.inflate(R.layout.fbchathead, null);
         chatheadImg = (ImageView) chatheadView.findViewById(R.id.chathead_img);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            windowManager.getDefaultDisplay().getSize(szWindow);
-        } else {
-            int w = windowManager.getDefaultDisplay().getWidth();
-            int h = windowManager.getDefaultDisplay().getHeight();
-            szWindow.set(w, h);
-        }
+        windowManager.getDefaultDisplay().getSize(szWindow);
 
         //use the same params as that of remove view just change the gravity
         WindowManager.LayoutParams chatHeadParams = new WindowManager.LayoutParams(
@@ -134,8 +127,8 @@ public class ChatBubbleService extends Service {
                         int statusBarHeight = getStatusBarHeight();
 
                         //check if
-                        if(x_cord_Destination+chatheadView.getWidth()>width){
-                            x_cord_Destination = width-chatheadView.getWidth();
+                        if(x_cord_Destination+chatheadView.getWidth()> screenWidth){
+                            x_cord_Destination = screenWidth -chatheadView.getWidth();
                         }
                         else if (x_cord_Destination<0){
                             x_cord_Destination = 0;
@@ -143,8 +136,8 @@ public class ChatBubbleService extends Service {
 
                         layoutParams.x = x_cord_Destination;
 
-                        if(y_cord_Destination+(chatheadView.getHeight()+statusBarHeight)>height){
-                            y_cord_Destination = height-statusBarHeight-chatheadView.getHeight();
+                        if(y_cord_Destination+(chatheadView.getHeight()+statusBarHeight)> screenHeight){
+                            y_cord_Destination = screenHeight -statusBarHeight-chatheadView.getHeight();
                         }
                         else if(y_cord_Destination<0){
                             y_cord_Destination = 0;
@@ -154,25 +147,12 @@ public class ChatBubbleService extends Service {
 
 
                         //make the remove view bigger
-                        //TODO refactor this part of code
-                        if(layoutParams.y==height-statusBarHeight-chatheadView.getHeight()){
-                            if(isViewIntersects(layoutParams.x)){
-                                removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
-                                removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
-                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
-                                inBound = true;
-                            }
-                            //when x co-ordinate is not same
-                            else{
-                                removeImg.getLayoutParams().height = getPixels();
-                                removeImg.getLayoutParams().width = getPixels();
-                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
-                                inBound = false;
-                            }
-                        }
+                        int normalRemoveHeight = getPixels();
 
-                        else if(layoutParams.y<height-statusBarHeight-chatheadView.getHeight() && layoutParams.y>=y_remove-removeView.getHeight()-chatheadView.getHeight()){
-                            if(isViewIntersects(layoutParams.x)){
+                        if(layoutParams.y== screenHeight -statusBarHeight-chatheadView.getHeight() ||
+                                (layoutParams.y< screenHeight -statusBarHeight-chatheadView.getHeight()
+                                        && layoutParams.y>=y_remove-removeView.getHeight()-chatheadView.getHeight())){
+                            if(checkViewIntersection(layoutParams.x)){
                                 removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
                                 removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
                                 windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
@@ -180,8 +160,8 @@ public class ChatBubbleService extends Service {
                             }
                             //when x co-ordinate is not same
                             else{
-                                removeImg.getLayoutParams().height = getPixels();
-                                removeImg.getLayoutParams().width = getPixels();
+                                removeImg.getLayoutParams().height =normalRemoveHeight ;
+                                removeImg.getLayoutParams().width = normalRemoveHeight;
                                 windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
                                 inBound = false;
                             }
@@ -189,10 +169,10 @@ public class ChatBubbleService extends Service {
 
                         //general case when x and y is not same
                         else{
-                            //restore the height to the normal of the remove view
+                            //restore the screenHeight to the normal of the remove view
                             if(inBound){
-                                removeImg.getLayoutParams().height = getPixels();
-                                removeImg.getLayoutParams().width = getPixels();
+                                removeImg.getLayoutParams().height = normalRemoveHeight;
+                                removeImg.getLayoutParams().width =  normalRemoveHeight;
                                 windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
                                 inBound = false;
                             }
@@ -254,7 +234,7 @@ public class ChatBubbleService extends Service {
         return result;
     }
 
-    private boolean isViewIntersects(int x) {
+    private boolean checkViewIntersection(int x) {
        if(x>x_remove-removeView.getWidth() && x<x_remove)
            return true;
         return false;

@@ -171,6 +171,22 @@ public class ChatBubbleService extends Service {
                             }
                         }
 
+                        else if(layoutParams.y<height-statusBarHeight-chatheadView.getHeight() && layoutParams.y>=y_remove-removeView.getHeight()-chatheadView.getHeight()){
+                            if(isViewIntersects(layoutParams.x)){
+                                removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
+                                removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
+                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
+                                inBound = true;
+                            }
+                            //when x co-ordinate is not same
+                            else{
+                                removeImg.getLayoutParams().height = getPixels();
+                                removeImg.getLayoutParams().width = getPixels();
+                                windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
+                                inBound = false;
+                            }
+                        }
+
                         //general case when x and y is not same
                         else{
                             //restore the height to the normal of the remove view

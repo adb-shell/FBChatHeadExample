@@ -1,6 +1,11 @@
 package com.karthik.fbchatheadexample;
 
 
+import com.facebook.rebound.Spring;
+import com.facebook.rebound.SpringConfig;
+import com.facebook.rebound.SpringListener;
+import com.facebook.rebound.SpringSystem;
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +17,7 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -19,18 +25,22 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 /**
  * Created by karthikrk on 04/09/15.
  */
-public class ChatBubbleService extends Service {
+public class ChatHeadService extends Service{
 
     private WindowManager windowManager;
-    private RelativeLayout chatheadView, removeView;
+    private RelativeLayout removeView;
+    /**our custom chat head view**/
+    private ChatHead chatheadView;
     private Point szWindow = new Point();
-    private int x_init_cord, y_init_cord, x_init_margin, y_init_margin,x_remove,y_remove, screenHeight, screenWidth;
+    private float x_remove,y_remove, screenHeight, screenWidth,statusBarHeight;
+
     private Context mContext;
-    private ImageView chatheadImg, removeImg;
+    private ImageView removeImg;
     private DisplayMetrics displayMetrics;
 
 
@@ -41,6 +51,8 @@ public class ChatBubbleService extends Service {
         displayMetrics = getResources().getDisplayMetrics();
         screenHeight = displayMetrics.heightPixels;
         screenWidth = displayMetrics.widthPixels;
+        statusBarHeight = getStatusBarHeight();
+
         if(startId == Service.START_STICKY) {
             displayChatBubble();
             return super.onStartCommand(intent, flags, startId);
@@ -52,6 +64,7 @@ public class ChatBubbleService extends Service {
     private void displayChatBubble() {
 
         mContext = this;
+
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(mContext.LAYOUT_INFLATER_SERVICE);
 
@@ -73,9 +86,7 @@ public class ChatBubbleService extends Service {
         windowManager.addView(removeView, removeParams);
 
 
-        //Adding the chathead view
-        chatheadView = (RelativeLayout) inflater.inflate(R.layout.fbchathead, null);
-        chatheadImg = (ImageView) chatheadView.findViewById(R.id.chathead_img);
+        chatheadView  = new ChatHead(mContext);
 
         windowManager.getDefaultDisplay().getSize(szWindow);
 
@@ -87,20 +98,15 @@ public class ChatBubbleService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT);
 
-        chatHeadParams.gravity = Gravity.TOP | Gravity.LEFT;
-        chatHeadParams.x = 0;
-        chatHeadParams.y = 100;
+
         windowManager.addView(chatheadView, chatHeadParams);
 
         chatheadView.setOnTouchListener(new View.OnTouchListener() {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                WindowManager.LayoutParams layoutParams = (WindowManager.LayoutParams) chatheadView.getLayoutParams();
-
-                int x_cord = (int) event.getRawX();
-                int y_cord = (int) event.getRawY();
-                int x_cord_Destination, y_cord_Destination;
+                float xPos = event.getRawX();
+                float yPos = event.getRawY();
                 switch (event.getAction()) {
                     //when the user has pressed the chat bubble
                     case MotionEvent.ACTION_DOWN:
@@ -109,50 +115,33 @@ public class ChatBubbleService extends Service {
                         remove_img_width = removeImg.getLayoutParams().width;
                         remove_img_height = removeImg.getLayoutParams().height;
 
-                        x_init_cord = x_cord;
-                        y_init_cord = y_cord;
-
-                        x_init_margin = layoutParams.x;
-                        y_init_margin = layoutParams.y;
                         break;
 
                     //when the user is dragging the chat bubble
                     case MotionEvent.ACTION_MOVE:
-                        int x_diff_move = x_cord - x_init_cord;
-                        int y_diff_move = y_cord - y_init_cord;
 
-                        x_cord_Destination = x_init_margin + x_diff_move;
-                        y_cord_Destination = y_init_margin + y_diff_move;
-
-                        int statusBarHeight = getStatusBarHeight();
-
-                        //check if
-                        if(x_cord_Destination+chatheadView.getWidth()> screenWidth){
-                            x_cord_Destination = screenWidth -chatheadView.getWidth();
+                        if(xPos+(chatheadView.mBitmap.getWidth())>screenWidth){
+                            xPos = screenWidth-chatheadView.mBitmap.getWidth();
                         }
-                        else if (x_cord_Destination<0){
-                            x_cord_Destination = 0;
+                        else if(xPos<0){
+                            xPos=0;
                         }
 
-                        layoutParams.x = x_cord_Destination;
-
-                        if(y_cord_Destination+(chatheadView.getHeight()+statusBarHeight)> screenHeight){
-                            y_cord_Destination = screenHeight -statusBarHeight-chatheadView.getHeight();
+                        if(yPos+(chatheadView.mBitmap.getHeight())+statusBarHeight>screenHeight){
+                            yPos = screenHeight-statusBarHeight-chatheadView.mBitmap.getHeight();
                         }
-                        else if(y_cord_Destination<0){
-                            y_cord_Destination = 0;
+                        else if(yPos<0){
+                            yPos=0;
                         }
 
-                        layoutParams.y = y_cord_Destination;
+                        chatheadView.mXSprings.setEndValue(xPos);
+                        chatheadView.mYSprings.setEndValue(yPos);
 
-
-                        //make the remove view bigger
                         int normalRemoveHeight = getPixels();
-
-                        if(layoutParams.y== screenHeight -statusBarHeight-chatheadView.getHeight() ||
-                                (layoutParams.y< screenHeight -statusBarHeight-chatheadView.getHeight()
-                                        && layoutParams.y>=y_remove-removeView.getHeight()-chatheadView.getHeight())){
-                            if(checkViewIntersection(layoutParams.x)){
+                        if(yPos== screenHeight-statusBarHeight-chatheadView.mBitmap.getHeight() ||
+                                (yPos< screenHeight -statusBarHeight-chatheadView.mBitmap.getHeight()
+                                        && yPos>=y_remove-removeView.getHeight()-chatheadView.mBitmap.getHeight())){
+                            if(checkViewIntersection((int)xPos)){
                                 removeImg.getLayoutParams().height = (int) (remove_img_height * 1.5);
                                 removeImg.getLayoutParams().width = (int) (remove_img_width * 1.5);
                                 windowManager.updateViewLayout(removeView, removeView.getLayoutParams());
@@ -178,9 +167,6 @@ public class ChatBubbleService extends Service {
                             }
                         }
 
-
-
-                        windowManager.updateViewLayout(chatheadView, layoutParams);
                         break;
 
                     case MotionEvent.ACTION_UP:
@@ -221,12 +207,14 @@ public class ChatBubbleService extends Service {
                     }
                 }
             };
+
+
         });
 
     }
 
-    private int getStatusBarHeight() {
-        int result = 0;
+    private float getStatusBarHeight() {
+        float result = 0;
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
             result = getResources().getDimensionPixelSize(resourceId);
@@ -266,5 +254,4 @@ public class ChatBubbleService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
 }

@@ -19,9 +19,8 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".ChatBubbleService"
+            android:name=".ChatHeadService"
             android:label="FBChatHeadExample">
-
         </service>
 
     </application>

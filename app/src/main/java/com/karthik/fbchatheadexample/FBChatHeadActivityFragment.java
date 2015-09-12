@@ -28,7 +28,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_fbchat_head, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_layout, container, false);
         mContext = getActivity();
         setupClickListners(rootView);
         return rootView;
@@ -51,7 +51,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
                 break;
             case R.id.stop_floating:
                 //remove the chat head
-                if(isServiceRunning("ChatBubbleService")){
+                if(isServiceRunning("ChatHeadService")){
                     mContext.stopService(serviceIntent);
                 }
                 break;
@@ -75,7 +75,7 @@ public class FBChatHeadActivityFragment extends Fragment implements View.OnClick
 
     private void displayButton(){
         //starting the chat bubble service
-        serviceIntent = new Intent(mContext, ChatBubbleService.class);
+        serviceIntent = new Intent(mContext, ChatHeadService.class);
         mContext.startService(serviceIntent);
     }
 

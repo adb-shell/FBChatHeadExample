@@ -1,3 +1,2 @@
 # FBChatHeadExample
-Example of FB Messenger chat heads, 
-Inspired by Henry Chuang FB-ChatHead.
+Example of FB Messenger chat heads for Android integrated with facebook rebound library,inspired by Henry Chuang FB-ChatHead.

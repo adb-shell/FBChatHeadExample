@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -24,6 +25,21 @@ public class ChatHead extends View implements SpringListener {
 
     public ChatHead(Context context) {
         super(context);
+        intialize();
+
+    }
+
+    public ChatHead(Context context,AttributeSet attributeSet){
+        super(context,attributeSet);
+        intialize();
+    }
+
+    public ChatHead(Context context,AttributeSet attributeSet,int defStyle){
+        super(context,attributeSet,defStyle);
+        intialize();
+    }
+
+    private void intialize(){
         SpringSystem ss = SpringSystem.create();
 
         Spring s;
@@ -37,9 +53,7 @@ public class ChatHead extends View implements SpringListener {
         s.setSpringConfig(new MySpringConfig(200, 0 == 0? 8 : 15 + 0 * 2, 0, false));
         s.addListener(this);
         mYSprings = s;
-
     }
-
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         mXSprings.setCurrentValue(w / 2);
